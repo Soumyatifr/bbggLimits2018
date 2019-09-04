@@ -170,24 +170,28 @@ def runFullChain(opt, Params, point=None, NRgridPoint=-1, extraLabel=''):
 
   # For now the mass cuts are all the same, but can be changed in future.
   # ParamsForFits = {'SM': massCuts, 'box': massCuts}
+  # Change siganlFile to signalFile1 because VBFHH signal has to incorporate.....
+  SignalFile1 = "/LT_output_GluGluToHHTo2B2G_node_"+str(point)+"_13TeV-madgraph.root"
+#  if "LT_StrikeBack" in LTDir or "MadMax" in LTDir or "ttH" in LTDir:
+#      SignalFile1 = "/LT_output_GluGluToHHTo2B2G_node_"+str(point)+"_13TeV-madgraph_0.root"
+#  if isRes:
+#    SignalFile1 = "/LT_output_GluGluToTYPEToHHTo2B2G_M-"+str(point)+"_narrow_13TeV-madgraph.root"
+#    if "RES_Mar21" in LTDir:
+#      SignalFile1 = "/LT_output_GluGluToTYPEToHHTo2B2G_M-"+str(point)+"_narrow_13TeV-madgraph_0.root"
 
-  SignalFile = "/LT_output_GluGluToHHTo2B2G_node_"+str(point)+"_13TeV-madgraph.root"
-  if "LT_StrikeBack" in LTDir or "MadMax" in LTDir or "ttH" in LTDir:
-      SignalFile = "/LT_output_GluGluToHHTo2B2G_node_"+str(point)+"_13TeV-madgraph.root"
-  if isRes:
-    SignalFile = "/LT_output_GluGluToTYPEToHHTo2B2G_M-"+str(point)+"_narrow_13TeV-madgraph.root"
-    if "RES_Mar21" in LTDir:
-      SignalFile = "/LT_output_GluGluToTYPEToHHTo2B2G_M-"+str(point)+"_narrow_13TeV-madgraph_0.root"
+#  if NRgridPoint >= 0:
+#    SignalFile1 = "/LT_NR_Nodes_2to13_merged.root"
 
-  if NRgridPoint >= 0:
-    SignalFile = "/LT_NR_Nodes_2to13_merged.root"
+#  if opt.analyticalRW == True:
+#    pointStr = "_".join(['kl',str(opt.ARW_kl),'kt',str(opt.ARW_kt),'cg',str(opt.ARW_cg),'c2',str(opt.ARW_c2),'c2g',str(opt.ARW_c2g)]).replace('.', 'p').replace('-', 'm')
+#    SignalFile1="/LT_NR_Nodes_All_merged_"+pointStr+".root"
 
-  if opt.analyticalRW == True:
-    pointStr = "_".join(['kl',str(opt.ARW_kl),'kt',str(opt.ARW_kt),'cg',str(opt.ARW_cg),'c2',str(opt.ARW_c2),'c2g',str(opt.ARW_c2g)]).replace('.', 'p').replace('-', 'm')
-    SignalFile="/LT_NR_Nodes_All_merged_"+pointStr+".root"
+  mainLog.debug('%s', SignalFile1)
 
-  mainLog.debug('%s', SignalFile)
 
+ #***************************************************************VBFHH signalFile2*************************************************************#
+  SignalFile2 = "/LT_output_VBFHHTo2B2G_CV_1_C2V_1_C3_1_13TeV-madgraph.root"
+  mainLog.debug('%s', SignalFile2)
   newFolder = baseFolder+ str('/'+Label)
 
   createDir(newFolder,mainLog)
@@ -237,16 +241,29 @@ def runFullChain(opt, Params, point=None, NRgridPoint=-1, extraLabel=''):
 
   mass = 125.0
   if opt.verb>0:
-    mainLog.info('Signal File:\n'+LTDir+SignalFile)
+    mainLog.info('Signal File:\n'+LTDir+SignalFile1)
 
-  if not os.path.isfile(LTDir+SignalFile):
-    print 'File does not exist: ', LTDir+SignalFile
+  if not os.path.isfile(LTDir+SignalFile1):
+    print 'File does not exist: ', LTDir+SignalFile1
     return __BAD__
 
-  openStatus = theFitter.AddSigData( mass, str(LTDir+SignalFile))
-  if openStatus==-1:
+  if opt.verb>0:
+    mainLog.info('Signal File:\n'+LTDir+SignalFile2)
+
+  if not os.path.isfile(LTDir+SignalFile2):
+    print 'File does not exist: ', LTDir+SignalFile2
+    return __BAD__
+
+  openStatus1 = theFitter.AddSigData1( mass, str(LTDir+SignalFile1))
+  if openStatus1==-1:
     mainLog.error('There is a problem with openStatus')
     return __BAD__
+
+  openStatus2 = theFitter.AddSigData2( mass, str(LTDir+SignalFile2))
+  if openStatus2==-1:
+    mainLog.error('There is a problem with openStatus')
+    return __BAD__
+
   mainLog.info("\t SIGNAL ADDED. Node=%r, GridPoint=%r", point,NRgridPoint)
   if opt.verb>0: p1 = printTime(start, start, mainLog)
 
@@ -263,7 +280,7 @@ def runFullChain(opt, Params, point=None, NRgridPoint=-1, extraLabel=''):
   if opt.verb>0: p3 = printTime(p2,start,mainLog)
 
   if addHiggs:
-    higTypes = Params['higgs']['type']
+    higTypes = Params['higgs']['type'] #This 'higgs' is called from conf_default.json
     if opt.verb>1:
       mainLog.debug('Here will add SM Higgs contributions \n Higgs types: '+ pformat(higTypes))
     higgsExp = {}
@@ -316,31 +333,35 @@ def runFullChain(opt, Params, point=None, NRgridPoint=-1, extraLabel=''):
 
   # print PID, "IM HERE"
 
-  sigExp = []
+  sigExp1 = []
+  sigExp2 = []
   bkgObs = []
   for cc in xrange(NCAT):
-    sigExp.append(-1)
+    sigExp1.append(-1)
+    sigExp2.append(-1)
     bkgObs.append(-1)
 
-  sigExpStr = ''
+  sigExp1Str = ''
+  sigExp2Str = ''
   bkgObsStr = ''
   for cc in xrange(NCAT):
-    sigExp[cc] = theFitter.GetSigExpectedCats(cc);
+    sigExp1[cc] = theFitter.GetSigExpectedCats1(cc); 
+    sigExp2[cc] = theFitter.GetSigExpectedCats2(cc);
     if not doBlinding:
       bkgObs[cc] = theFitter.GetObservedCats(cc);
 
     if opt.verb>1:
-      mainLog.debug('SIG events in cat %r: %r,  OBS (BKG): %r' % (sigExp[cc], cc, bkgObs[cc]))
-
+      mainLog.debug('SIG events in cat %r: %r,  OBS (BKG): %r' % (sigExp1[cc], cc, bkgObs[cc]))
+     
   # Make datacards:
   myLoc = os.getenv("CMSSW_BASE") + '/src/HiggsAnalysis/bbggLimits2018/'+newFolder
   if isRes==1:
-    DataCardMaker(str(myLoc), NCAT, sigExp, bkgObs, isRes)
+    DataCardMaker(str(myLoc), NCAT, sigExp1, sigExp2,  bkgObs, isRes)
   elif addHiggs == 0:
-    DataCardMaker(str(myLoc), NCAT, sigExp, bkgObs, isRes)
+    DataCardMaker(str(myLoc), NCAT, sigExp1, sigExp2,  bkgObs, isRes)
   else:
-    DataCardMaker_wHiggs(str(myLoc), NCAT, sigExp, bkgObs, higgsExp, mainLog)
-    DataCardMaker_bias(str(myLoc), NCAT, sigExp, bkgObs, mainLog)
+    DataCardMaker_wHiggs(str(myLoc), NCAT, sigExp1, sigExp2, bkgObs, higgsExp, mainLog)
+    DataCardMaker_bias(str(myLoc), NCAT, sigExp1, sigExp2, bkgObs, mainLog)
 
   mainLog.info("\t DATACARD DONE. Node/Mass=%r, GridPoint=%r", point,NRgridPoint)
   if opt.verb>0: p7 = printTime(p6,start,mainLog)

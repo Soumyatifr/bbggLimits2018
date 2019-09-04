@@ -89,7 +89,8 @@ class bbgg2DFitter {
   int _fitStrategy = 2;
   bool _useDSCB = 0;
   bool _doARW = 0;
-  std::map<int,float> sigExpec;
+  std::map<int,float> sig1Expec;
+  std::map<int,float> sig2Expec;
   std::vector<std::map<TString,float>> higExpec;
   std::map<int,float> bkgExpec;
   std::map<int,float> dataObs;
@@ -113,8 +114,9 @@ class bbgg2DFitter {
    void SetType(std::string tp) { _signalType = tp; }
    RooAbsPdf* getPdf(PdfModelBuilder pdfsModel,string type, int order, const char* ext);
    RooArgSet* defineVariables(bool s);
-   int AddSigData(float mass, TString signalfile); 
-   std::vector<float> AddHigData(float mass, TString signalfile, int higgschannel, TString higName); 
+   int AddSigData1(float mass, TString signalfile1); 
+   int AddSigData2(float mass, TString signalfile2);
+   std::vector<float> AddHigData(float mass, TString signalfile1, int higgschannel, TString higName); 
    void AddBkgData(TString datafile); 
    void SigModelFit(float mass); 
    void HigModelFit(float mass, int higgschannel, TString higName); 
@@ -130,16 +132,21 @@ class bbgg2DFitter {
   
    void SetConstantParams(const RooArgSet* params); 
 
-   void SetSigExpectedCats(int cat, float expec) {
-     if(sigExpec.find(cat) != sigExpec.end() ){std::cout << "[SetSigExpectedCats] Cat already set!" << std::endl;} else { sigExpec[cat] = expec; }}
+   void SetSigExpectedCats1(int cat, float expec1) {
+     if(sig1Expec.find(cat) != sig1Expec.end() ){std::cout << "[SetSigExpectedCats] Cat already set!" << std::endl;} else { sig1Expec[cat] = expec1; }}
+   void SetSigExpectedCats2(int cat, float expec2) {
+     if(sig2Expec.find(cat) != sig2Expec.end() ){std::cout << "[SetSigExpectedCats] Cat already set!" << std::endl;} else { sig2Expec[cat] = expec2; }}
    void SetBkgExpectedCats(int cat, float expec) {
      if(bkgExpec.find(cat) != bkgExpec.end() ){std::cout << "[SetBkgExpectedCats] Cat already set!" << std::endl;} else { bkgExpec[cat] = expec; }}
    void SetObservedCats(int cat, float observ) {
      if(dataObs.find(cat) != dataObs.end() ){std::cout << "[DataObservedCats] Cat already set!" << std::endl;} else { dataObs[cat] = observ; }}
 
-   float GetSigExpectedCats(int cat) {
-     if(sigExpec.find(cat) == sigExpec.end() ){std::cout << "[GetSigExpectedCats] Cat not found! Cat=" <<cat<< std::endl; return -1;}
-     else { return sigExpec[cat]; }}
+   float GetSigExpectedCats1(int cat) {
+     if(sig1Expec.find(cat) == sig1Expec.end() ){std::cout << "[GetSigExpectedCats] Cat not found! Cat=" <<cat<< std::endl; return -1;}
+     else { return sig1Expec[cat]; }}
+   float GetSigExpectedCats2(int cat) {
+     if(sig2Expec.find(cat) == sig2Expec.end() ){std::cout << "[GetSigExpectedCats] Cat not found! Cat=" <<cat<< std::endl; return -1;}
+     else { return sig2Expec[cat]; }}
    float GetBkgExpectedCats(int cat) {
      if(bkgExpec.find(cat) == bkgExpec.end() ){std::cout << "[GetBkgExpectedCats] Cat not found! Cat="<<cat<< std::endl; return -1;}
      else { return bkgExpec[cat]; }}

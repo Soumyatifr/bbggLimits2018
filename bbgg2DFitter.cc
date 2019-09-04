@@ -114,14 +114,14 @@ RooArgSet* bbgg2DFitter::defineVariables(bool swithToSimpleWeight=false)
   return ntplVars;
 }
 
-int bbgg2DFitter::AddSigData(float mass, TString signalfile)
+int bbgg2DFitter::AddSigData1(float mass, TString signalfile1)
 {
   if (_verbLvl>1) std::cout << "================= Add Signal========================== " << _wName.c_str() << " " << _doARW << " " << _nonResWeightIndex << std::endl;
-  if (_verbLvl>1) std::cout << " File to open:"<<signalfile  << std::endl;
-  TFile *sigFile = TFile::Open(signalfile);
+  if (_verbLvl>1) std::cout << " File to open:"<<signalfile1  << std::endl;
+  TFile *sigFile = TFile::Open(signalfile1);
   bool opened=sigFile->IsOpen();
   if(opened==false) return -1;
-  if (_verbLvl>1) std::cout << " TFile opened:"<<signalfile  << std::endl;
+  if (_verbLvl>1) std::cout << " TFile opened:"<<signalfile1  << std::endl;
 
   TTree* sigTree = (TTree*)sigFile->Get("LT");
 
@@ -167,7 +167,7 @@ int bbgg2DFitter::AddSigData(float mass, TString signalfile)
       
       sigToFit[i] = (RooDataSet*) sigScaled.reduce(myArgList,_cut+TString::Format(" && catID==%d ",i)+cut0);
 
-      this->SetSigExpectedCats(i, sigToFit[i]->sumEntries());
+      this->SetSigExpectedCats1(i, sigToFit[i]->sumEntries());
 
       if (_verbLvl>0) {
 	std::cout << "======================================================================" <<std::endl;
@@ -189,7 +189,7 @@ int bbgg2DFitter::AddSigData(float mass, TString signalfile)
   std::cout << "-- Reducing all signal, no cat" << std::endl;
   RooDataSet* sigToFitAll = (RooDataSet*) sigScaled.reduce(myArgList,_cut+cut0);
 
-  _w->import(*sigToFitAll,Rename("Sig"));
+  _w->import(*sigToFitAll,Rename("Sig1"));
 
   // here we print the number of entries on the different categories
   if (_verbLvl>1) {
@@ -207,17 +207,103 @@ int bbgg2DFitter::AddSigData(float mass, TString signalfile)
   }
   return 0;
 }
+int bbgg2DFitter::AddSigData2(float mass, TString signalfile2)
+{
+  if (_verbLvl>1) std::cout << "================= Add Signal========================== " << _wName.c_str() << " " << _doARW << " " << _nonResWeightIndex << std::endl;
+  if (_verbLvl>1) std::cout << " File to open:"<<signalfile2  << std::endl;
+  TFile *sigFile2 = TFile::Open(signalfile2);
+  bool opened=sigFile2->IsOpen();
+  if(opened==false) return -1;
+  if (_verbLvl>1) std::cout << " TFile opened:"<<signalfile2  << std::endl;
 
-std::vector<float> bbgg2DFitter::AddHigData(float mass, TString signalfile, int higgschannel, TString higName)
+  TTree* sigTree2 = (TTree*)sigFile2->Get("LT");
+
+  RooRealVar lumi("lumi","lumi", _lumi);
+  _w->import(lumi);
+  RooArgSet* ntplVars = bbgg2DFitter::defineVariables();
+  if(sigTree2==nullptr)
+    {
+      if (_verbLvl>1) std::cout<<"LT tree for AddSigData not found."<<std::endl;
+      std::exit(1);
+    }
+
+  if (_verbLvl>0) {
+    std::cout<<"[DBG]  Prining ntplVars from sig"<<std::endl;
+    ntplVars->Print();
+  }
+
+  RooDataSet sigScaled2("sigScaled", "dataset", sigTree2, *ntplVars, _cut, _wName.c_str());
+
+  RooDataSet* sigToFit2[_NCAT];
+  TString cut0 = " && 1>0";
+
+  RooArgList myArgList(*_w->var("mgg"));
+  myArgList.add(*_w->var("mjj"));
+
+  if (_nonResWeightIndex>=-1)
+    myArgList.add(*_w->var("mtot"));
+
+
+  myArgList.Print();
+
+  for ( int i=0; i<_NCAT; ++i)
+    {
+
+      if (_verbLvl>0) {
+        std::cout << "-- Reducing category " << i << std::endl;
+        std::cout << "Including the _cut: " << _cut << std::endl;
+      }
+
+      sigToFit2[i] = (RooDataSet*) sigScaled2.reduce(myArgList,_cut+TString::Format(" && catID==%d ",i)+cut0);
+
+      this->SetSigExpectedCats2(i, sigToFit2[i]->sumEntries());
+
+      if (_verbLvl>0) {
+        std::cout << "======================================================================" <<std::endl;
+        std::cout<<"[DBG]  Cat="<<i<< "\t Sig sumEntries="<<sigToFit2[i]->sumEntries()<<std::endl;
+        std::cout<<"mGG:  Mean = "<<sigToFit2[i]->mean(*_w->var("mgg"))<<"  sigma = "<<sigToFit2[i]->sigma(*_w->var("mgg"))<<std::endl;
+        if (_fitStrategy != 1)
+          std::cout<<"mJJ:  Mean = "<<sigToFit2[i]->mean(*_w->var("mjj"))<<"  sigma = "<<sigToFit2[i]->sigma(*_w->var("mjj"))<<std::endl;
+
+        if (_nonResWeightIndex>=-1)
+          std::cout<<"mTot: Mean = "<<sigToFit2[i]->mean(*_w->var("mtot"))<<"  sigma = "<<sigToFit2[i]->sigma(*_w->var("mtot"))<<std::endl;
+      }
+
+      std::cout << "-- Importing cat " << i << std::endl;
+      _w->import(*sigToFit2[i],Rename(TString::Format("Sig_cat%d",i)));
+    }
+
+  std::cout << "-- Reducing all signal, no cat" << std::endl;
+  RooDataSet* sigToFitAll2 = (RooDataSet*) sigScaled2.reduce(myArgList,_cut+cut0);
+
+  _w->import(*sigToFitAll2,Rename("Sig2"));
+
+  if (_verbLvl>1) {
+    std::cout << "======================================================================" <<std::endl;
+    std::cout << "========= the number of entries on the different categories ==========" <<std::endl;
+    std::cout << "---- one channel: " << sigScaled2.sumEntries() <<std::endl;
+    for (int c = 0; c < _NCAT; ++c)
+      {
+        Float_t nExpEvt = sigToFit2[c]->sumEntries();
+        std::cout<<TString::Format("nEvt exp. cat%d : ",c)<<nExpEvt<<TString::Format(" eff x Acc cat%d : ",c)<<std::endl;
+    }
+    std::cout << "======================================================================" <<std::endl;
+    sigScaled2.Print("v");
+    std::cout << "----- DONE With Adding Signal! \n\n"<< std::endl;
+  }
+  return 0;
+}
+
+std::vector<float> bbgg2DFitter::AddHigData(float mass, TString signalfile1, int higgschannel, TString higName)
 {
   if (_verbLvl>1) {
     std::cout << "================= Adding Single Higgs ==========================" <<std::endl;
-    std::cout<<" \t mass: "<<mass<<" signalfile="<<signalfile<<" higgschannel="<<higgschannel<<" higName="<<higName<<std::endl;
+    std::cout<<" \t mass: "<<mass<<" signalfile="<<signalfile1<<" higgschannel="<<higgschannel<<" higName="<<higName<<std::endl;
   }
 
   RooArgSet* ntplVars = defineVariables(1);
 
-  TFile higFile(signalfile);
+  TFile higFile(signalfile1);
   TTree* higTree = (TTree*) higFile.Get("LT");
   if(higTree==nullptr)
     {

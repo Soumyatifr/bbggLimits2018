@@ -78,7 +78,7 @@ def runCombine(inDir, doBlind, log, combineOpt = 1, Label = None, scaleSingleHig
   return combExitCode
 
 
-def DataCardMaker_wHiggs(Folder, nCats, signalExp, observed, higgsExp, log):
+def DataCardMaker_wHiggs(Folder, nCats, signalExp1, signalExp2, observed, higgsExp, log):
   # Need to loop over categories here
 
   for n in range(nCats):
@@ -90,13 +90,17 @@ def DataCardMaker_wHiggs(Folder, nCats, signalExp, observed, higgsExp, log):
       outToWrite = cardTemp.read()
 
       outToWrite = outToWrite.replace("INPUTBKGLOC", str(Folder + '/ws_hhbbgg.data_bkg.root'))
-      outToWrite = outToWrite.replace("INPUTSIGLOC", str(Folder + '/ws_hhbbgg.HH.sig.mH125_13TeV.root'))
+      outToWrite = outToWrite.replace("INPUTSIGLOC1", str(Folder + '/ws_hhbbgg.HH.sig.mH125_13TeV.root'))
+      outToWrite = outToWrite.replace("INPUTSIGLOC2", str(Folder + '/ws_hhbbgg.HH.sig.mH125_13TeV.root'))
 
       ##observed
       outToWrite = outToWrite.replace("OBS_CAT"+str(n), '%.1f' % observed[n])
       #print outToWrite
       ##expected signal
-      outToWrite = outToWrite.replace("SIG_CAT"+str(n), '%.5f' % signalExp[n])
+      #outToWrite = outToWrite.replace("SIG1_CAT"+str(n), '%.5f' % signalExp1[n])
+      outToWrite = outToWrite.replace("SIG1_CAT"+str(n), '0')
+      outToWrite = outToWrite.replace("SIG2_CAT"+str(n), '%.5f' % signalExp2[n])
+
       ## higgs
       # print higgsExp
       for hty in higgsExp:
@@ -129,7 +133,7 @@ def DataCardMaker_wHiggs(Folder, nCats, signalExp, observed, higgsExp, log):
   os.system("sed -i 's|"+strReplace+"||g' "+combCard)
   # print strReplace
 
-def DataCardMaker_bias(Folder, nCats, signalExp, observed, log):
+def DataCardMaker_bias(Folder, nCats, signalExp1, signalExp2, observed, log):
   # Need to loop over categories here
 
   for n in range(nCats):
@@ -142,13 +146,16 @@ def DataCardMaker_bias(Folder, nCats, signalExp, observed, log):
 
       outToWrite = outToWrite.replace("INPUTBKGLOC", 'ws_hhbbgg.data_bkg.root')
       outToWrite = outToWrite.replace("INPUTBKGMULTLOC", 'ws_hhbbgg.data_bkg_multipdf.root')
-      outToWrite = outToWrite.replace("INPUTSIGLOC", 'ws_hhbbgg.HH.sig.mH125_13TeV.root')
+      outToWrite = outToWrite.replace("INPUTSIG1LOC", 'ws_hhbbgg.HH.sig1.mH125_13TeV.root')
+      outToWrite = outToWrite.replace("INPUTSIG2LOC", 'ws_hhbbgg.HH.sig2.mH125_13TeV.root')
 
       ##observed
       outToWrite = outToWrite.replace("OBS", '%.1f' % observed[n])
       #print outToWrite
       ##expected signal
-      outToWrite = outToWrite.replace("SIG", '%.5f' % signalExp[n])
+      #outToWrite = outToWrite.replace("SIG1", '%.5f' % signalExp1[n])
+      outToWrite = outToWrite.replace("SIG1", '0')
+      outToWrite = outToWrite.replace("SIG2", '%.5f' % signalExp2[n])
       outToWrite = outToWrite.replace("ICAT", 'cat%d' % n)
 
       with open(Folder+'/hhbbgg_13TeV_DataCard_bias_cat'+str(n)+'.txt', 'w') as outputDatacard:
